@@ -1,6 +1,8 @@
 # phergie-logger-plugin
 
-log messages in IRC-Channels.
+This is a plugin for phergie.
+
+It can be used to log an IRC-Channel to disk using a PSR3-Logger.
 
 ## Usage:
 
