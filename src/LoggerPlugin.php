@@ -33,20 +33,15 @@ namespace Org_Heigl\Phergie\LoggerPlugin;
 use Phergie\Irc\Event\EventInterface as Event;
 use Phergie\Irc\Bot\React\EventQueueInterface as Queue;
 use Phergie\Irc\Bot\React\PluginInterface;
-use Phergie\Irc\Parser;
-use Psr\Log\LoggerInterface;
 
 class LoggerPlugin implements PluginInterface
 {
-    /** @var LoggerInterface */
-    protected $logger;
+    /** @var LoggerConfiguration */
+    protected $config;
 
-    protected $parser;
-
-    public function __construct(LoggerInterface $logger, Parser $parser)
+    public function __construct(LoggerConfiguration $config)
     {
-        $this->logger = $logger;
-        $this->parser = $parser;
+        $this->config = $config;
     }
 
     public function getSubscribedEvents()
@@ -58,16 +53,21 @@ class LoggerPlugin implements PluginInterface
 
     public function onReceive(Event $event, Queue $queue)
     {
-        $parsed = $this->parser->parse($event->getMessage());
-        if (! isset($parsed['nick'])) {
+        $message = $this->config->getParser()->parse($event->getMessage());
+
+        if (! isset($message['targets'])) {
             return;
         }
-        if (! isset($parsed['command'])) {
+        if (! isset($message['params']['text'])) {
             return;
         }
-        if (! isset($parsed['params']['text'])) {
-            $parsed['params']['text'] ='';
+
+        foreach($message['targets'] as $receiver) {
+            try {
+                $this->config->getLoggerForChannel($receiver)->info(
+                    $message['nick'] . ': ' . $message['params']['text']
+                );
+            } catch (\Exception $e){}
         }
-        $this->logger->info($parsed['nick'] . '::' . $parsed['command'] . '::' . $parsed['params']['text']);
     }
 }
